@@ -17,17 +17,40 @@ export default function MemphisRepl() {
     const fitAddon = new FitAddon();
 
     let currentLine = "";
+    let cursorIndex = 0;
     let indentLevel = 0;
     let isComplete = true;
+    let promptPrefix = "";
 
     function prompt() {
       // Calculate our new indent _and_ set that to be the start of our current line, since those
       // spaces should be considered part of the text input for that line.
       const indent = " ".repeat(indentLevel * INDENT_WIDTH);
       currentLine = indent;
+      cursorIndex = indent.length;
 
       const symbol = isComplete ? ">>> " : "... ";
+      promptPrefix = symbol + indent;
       term?.write(`\r\n${symbol}${indent}`);
+    }
+
+    function renderLine() {
+      // Move to start of line
+      term?.write("\r");
+
+      // Clear the line
+      term?.write("\x1b[2K");
+
+      // Reprint prompt + full line
+      term?.write(promptPrefix + currentLine);
+
+      // Move cursor to correct position
+      const targetCol = promptPrefix.length + cursorIndex;
+      const currentCol = promptPrefix.length + currentLine.length;
+
+      if (currentCol > targetCol) {
+        term?.write(`\x1b[${currentCol - targetCol}D`);
+      }
     }
 
     async function setup() {
@@ -71,6 +94,22 @@ export default function MemphisRepl() {
           prompt();
         }
 
+        // LEFT ARROW
+        else if (data === "\x1b[D") {
+          if (cursorIndex > 0) {
+            cursorIndex -= 1;
+            renderLine();
+          }
+        }
+
+        // RIGHT ARROW
+        else if (data === "\x1b[C") {
+          if (cursorIndex < currentLine.length) {
+            cursorIndex += 1;
+            renderLine();
+          }
+        }
+
         // ENTER
         else if (data === "\r") {
           const res = repl.input_line(currentLine + "\n");
@@ -89,15 +128,24 @@ export default function MemphisRepl() {
         // BACKSPACE
         else if (data === "\u007F") {
           if (currentLine.length > 0) {
-            currentLine = currentLine.slice(0, -1);
-            term?.write("\b \b");
+            currentLine =
+              currentLine.slice(0, cursorIndex - 1) +
+              currentLine.slice(cursorIndex);
+
+            cursorIndex -= 1;
+            renderLine();
           }
         }
 
         // NORMAL TEXT
         else {
-          currentLine += data;
-          term?.write(data);
+          currentLine =
+            currentLine.slice(0, cursorIndex) +
+            data +
+            currentLine.slice(cursorIndex);
+
+          cursorIndex += data.length;
+          renderLine();
         }
       });
     }
