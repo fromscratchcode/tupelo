@@ -6,6 +6,8 @@ import "./App.css";
 
 import init, { WasmRepl } from "../pkg/memphis";
 
+const INDENT_WIDTH = 4;
+
 export default function MemphisRepl() {
   const containerRef = useRef(null);
 
@@ -16,11 +18,16 @@ export default function MemphisRepl() {
 
     let currentLine = "";
     let indentLevel = 0;
+    let isComplete = true;
 
     function prompt() {
-      const indent = "  ".repeat(indentLevel);
-      const symbol = indentLevel > 0 ? "... " : ">>> ";
-      term?.write(`\r\n${indent}${symbol}`);
+      // Calculate our new indent _and_ set that to be the start of our current line, since those
+      // spaces should be considered part of the text input for that line.
+      const indent = " ".repeat(indentLevel * INDENT_WIDTH);
+      currentLine = indent;
+
+      const symbol = isComplete ? ">>> " : "... ";
+      term?.write(`\r\n${symbol}${indent}`);
     }
 
     async function setup() {
@@ -46,7 +53,7 @@ export default function MemphisRepl() {
         fitAddon.fit();
       });
 
-      term.writeln("Memphis WASM REPL");
+      term.write("Memphis REPL");
       prompt();
 
       term.onData((data) => {
@@ -54,13 +61,12 @@ export default function MemphisRepl() {
         if (data === "\r") {
           const res = repl.input_line(currentLine + "\n");
 
-          term?.write("\r\n");
-
           if (res.result.type === "Ok" || res.result.type === "Err") {
-            term?.writeln(res.result.value);
+            term?.write(`\r\n${res.result.value}`);
           }
 
           indentLevel = res.indent_level;
+          isComplete = res.is_complete;
           currentLine = "";
 
           prompt();
