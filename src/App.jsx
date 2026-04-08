@@ -57,8 +57,22 @@ export default function MemphisRepl() {
       prompt();
 
       term.onData((data) => {
+        // CTRL-C
+        if (data === "\x03") {
+          // Move to a new line
+          term?.write("^C");
+
+          // Reset state
+          currentLine = "";
+          indentLevel = 0;
+          isComplete = true;
+
+          // Start fresh prompt
+          prompt();
+        }
+
         // ENTER
-        if (data === "\r") {
+        else if (data === "\r") {
           const res = repl.input_line(currentLine + "\n");
 
           if (res.result.type === "Ok" || res.result.type === "Err") {
