@@ -18,11 +18,14 @@ export default function MemphisRepl() {
 
     let currentLine = "";
     let cursorIndex = 0;
-    let indentLevel = 0;
-    let isComplete = true;
+    let lastStep = { type: "complete", data: { type: "none" } };
     let promptPrefix = "";
 
     function prompt() {
+      const isComplete = lastStep.type === "complete";
+      const indentLevel =
+        lastStep.type === "incomplete" ? lastStep.data : 0;
+
       // Calculate our new indent _and_ set that to be the start of our current line, since those
       // spaces should be considered part of the text input for that line.
       const indent = " ".repeat(indentLevel * INDENT_WIDTH);
@@ -87,8 +90,7 @@ export default function MemphisRepl() {
 
           // Reset state
           currentLine = "";
-          indentLevel = 0;
-          isComplete = true;
+          lastStep = { type: "complete", data: { type: "none" } };
 
           // Start fresh prompt
           prompt();
@@ -112,16 +114,18 @@ export default function MemphisRepl() {
 
         // ENTER
         else if (data === "\r") {
-          const res = repl.input_line(currentLine + "\n");
+          const step = repl.input_line(currentLine + "\n");
+          lastStep = step;
 
-          if (res.result.type === "Ok" || res.result.type === "Err") {
-            term?.write(`\r\n${res.result.value}`);
+          if (step.type === "complete") {
+            const result = step.data;
+
+            if (result.type === "ok" || result.type === "err") {
+              term?.write(`\r\n${result.value}`);
+            }
           }
 
-          indentLevel = res.indent_level;
-          isComplete = res.is_complete;
           currentLine = "";
-
           prompt();
         }
 
