@@ -2,9 +2,9 @@ import { useEffect, useRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from '@xterm/addon-fit';
 import "xterm/css/xterm.css";
-import "./App.css";
 
-import init, { WasmRepl } from "../pkg/memphis";
+import { Memphis } from "./memphis";
+import "./App.css";
 
 const INDENT_WIDTH = 4;
 
@@ -57,9 +57,7 @@ export default function MemphisRepl() {
     }
 
     async function setup() {
-      await init();
-
-      repl = new WasmRepl();
+      repl = await Memphis.createRepl();
 
       term = new Terminal({
         cursorBlink: true,
