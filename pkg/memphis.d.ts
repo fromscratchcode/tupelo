@@ -6,6 +6,7 @@ export class WasmRepl {
   [Symbol.dispose](): void;
   input_line(line: string): any;
   constructor();
+  reset(): void;
 }
 
 export function compile(text: string): any;
@@ -20,13 +21,14 @@ export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembl
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
+  readonly __wbg_wasmrepl_free: (a: number, b: number) => void;
+  readonly wasmrepl_input_line: (a: number, b: number, c: number) => any;
+  readonly wasmrepl_new: () => number;
+  readonly wasmrepl_reset: (a: number) => void;
   readonly compile: (a: number, b: number) => [number, number, number];
   readonly evaluate: (a: number, b: number) => [number, number];
   readonly greet: () => [number, number];
   readonly lex: (a: number, b: number) => any;
-  readonly __wbg_wasmrepl_free: (a: number, b: number) => void;
-  readonly wasmrepl_input_line: (a: number, b: number, c: number) => any;
-  readonly wasmrepl_new: () => number;
   readonly __wbindgen_malloc: (a: number, b: number) => number;
   readonly __wbindgen_realloc: (a: number, b: number, c: number, d: number) => number;
   readonly __wbindgen_free: (a: number, b: number, c: number) => void;

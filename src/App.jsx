@@ -7,6 +7,11 @@ import { Memphis } from "./memphis";
 import "./App.css";
 
 const INDENT_WIDTH = 4;
+const INITIAL_STEP = { type: "complete", data: { type: "none" } };
+
+function normalizeOutput(text) {
+  return text.replace(/\n/g, "\r\n");
+}
 
 export default function MemphisRepl() {
   const containerRef = useRef(null);
@@ -15,45 +20,58 @@ export default function MemphisRepl() {
     let term = null;
     let repl = null;
     const fitAddon = new FitAddon();
+    const handleResize = () => {
+      fitAddon.fit();
+    };
 
     let currentLine = "";
     let cursorIndex = 0;
-    let lastStep = { type: "complete", data: { type: "none" } };
-    let promptPrefix = "";
+    let lastStep = INITIAL_STEP;
+    let pendingOutput = "";
+    let history = [];
+    let historyIndex = null;
 
-    function prompt() {
+    function promptInfo() {
       const isComplete = lastStep.type === "complete";
       const indentLevel =
         lastStep.type === "incomplete" ? lastStep.data : 0;
 
-      // Calculate our new indent _and_ set that to be the start of our current line, since those
-      // spaces should be considered part of the text input for that line.
       const indent = " ".repeat(indentLevel * INDENT_WIDTH);
-      currentLine = indent;
-      cursorIndex = indent.length;
+      const prefix = isComplete ? ">>> " : "... ";
 
-      const symbol = isComplete ? ">>> " : "... ";
-      promptPrefix = symbol + indent;
-      term?.write(`\r\n${symbol}${indent}`);
+      return {
+        indent,
+        prefix,
+      };
     }
 
-    function renderLine() {
-      // Move to start of line
-      term?.write("\r");
+    function enter() {
+      write("\r\n");
+    }
 
-      // Clear the line
-      term?.write("\x1b[2K");
+    function write(data) {
+      pendingOutput += data;
+    }
 
-      // Reprint prompt + full line
-      term?.write(promptPrefix + currentLine);
+    function resetInput() {
+      const { indent } = promptInfo();
+      currentLine = indent;
+      cursorIndex = indent.length;
+    }
 
-      // Move cursor to correct position
-      const targetCol = promptPrefix.length + cursorIndex;
-      const currentCol = promptPrefix.length + currentLine.length;
+    function redrawLine() {
+      const { prefix } = promptInfo();
 
-      if (currentCol > targetCol) {
-        term?.write(`\x1b[${currentCol - targetCol}D`);
-      }
+      const fullLine = prefix + currentLine;
+
+      const moveLeft =
+        fullLine.length > prefix.length + cursorIndex
+          ? `\x1b[${fullLine.length - (prefix.length + cursorIndex)}D`
+          : "";
+
+      term.write(pendingOutput + "\r\x1b[2K" + fullLine + moveLeft);
+
+      pendingOutput = "";
     }
 
     async function setup() {
@@ -73,32 +91,25 @@ export default function MemphisRepl() {
 
       fitAddon.fit();
 
-      window.addEventListener("resize", () => {
-        fitAddon.fit();
-      });
+      window.addEventListener("resize", handleResize);
 
-      term.write("Memphis REPL");
-      prompt();
+      write("Memphis REPL");
+      enter();
+      redrawLine();
 
       term.onData((data) => {
         // CTRL-C
         if (data === "\x03") {
-          // Move to a new line
-          term?.write("^C");
-
-          // Reset state
-          currentLine = "";
-          lastStep = { type: "complete", data: { type: "none" } };
-
-          // Start fresh prompt
-          prompt();
+          enter();
+          repl.reset();
+          lastStep = INITIAL_STEP;
+          resetInput();
         }
 
         // LEFT ARROW
         else if (data === "\x1b[D") {
           if (cursorIndex > 0) {
             cursorIndex -= 1;
-            renderLine();
           }
         }
 
@@ -106,12 +117,18 @@ export default function MemphisRepl() {
         else if (data === "\x1b[C") {
           if (cursorIndex < currentLine.length) {
             cursorIndex += 1;
-            renderLine();
           }
         }
 
         // ENTER
         else if (data === "\r") {
+          // Save history (only if non-empty)
+          if (currentLine.trim() !== "") {
+            history.push(currentLine);
+          }
+          historyIndex = null;
+
+          enter();
           const step = repl.input_line(currentLine + "\n");
           lastStep = step;
 
@@ -119,23 +136,58 @@ export default function MemphisRepl() {
             const result = step.data;
 
             if (result.type === "ok" || result.type === "err") {
-              term?.write(`\r\n${result.value}`);
+              write(normalizeOutput(result.value));
+              enter();
             }
           }
 
-          currentLine = "";
-          prompt();
+          resetInput();
         }
 
         // BACKSPACE
         else if (data === "\u007F") {
-          if (currentLine.length > 0) {
+          if (cursorIndex > 0) {
             currentLine =
               currentLine.slice(0, cursorIndex - 1) +
               currentLine.slice(cursorIndex);
 
             cursorIndex -= 1;
-            renderLine();
+          }
+        }
+
+        // UP ARROW
+        else if (data === "\x1b[A") {
+          if (historyIndex !== null) {
+            if (historyIndex > 0) {
+              historyIndex -= 1;
+            }
+          } else if (history.length > 0) {
+            historyIndex = history.length - 1;
+          }
+
+          if (historyIndex !== null) {
+            currentLine = history[historyIndex];
+            cursorIndex = currentLine.length;
+          }
+        }
+
+        // DOWN ARROW
+        else if (data === "\x1b[B") {
+          if (historyIndex !== null) {
+            if (historyIndex < history.length - 1) {
+              historyIndex += 1;
+            } else {
+              historyIndex = null;
+              currentLine = "";
+            }
+
+            if (historyIndex !== null) {
+              currentLine = history[historyIndex];
+            } else {
+              currentLine = "";
+            }
+
+            cursorIndex = currentLine.length;
           }
         }
 
@@ -147,8 +199,9 @@ export default function MemphisRepl() {
             currentLine.slice(cursorIndex);
 
           cursorIndex += data.length;
-          renderLine();
         }
+
+        redrawLine();
       });
     }
 
@@ -156,7 +209,7 @@ export default function MemphisRepl() {
 
     return () => {
       term?.dispose();
-      window.removeEventListener("resize", fitAddon.fit);
+      window.removeEventListener("resize", handleResize);
     };
   }, []);
 

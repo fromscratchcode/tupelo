@@ -189,6 +189,9 @@ export class WasmRepl {
         WasmReplFinalization.register(this, this.__wbg_ptr, this);
         return this;
     }
+    reset() {
+        wasm.wasmrepl_reset(this.__wbg_ptr);
+    }
 }
 if (Symbol.dispose) WasmRepl.prototype[Symbol.dispose] = WasmRepl.prototype.free;
 
