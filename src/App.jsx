@@ -7,7 +7,15 @@ import { Memphis } from "./memphis";
 import "./App.css";
 
 const INDENT_WIDTH = 4;
-const INITIAL_STEP = { type: "complete", data: { type: "none" } };
+const INITIAL_STEP = {
+  type: "complete",
+  data: {
+    stdout: "",
+    result: {
+      type: "none"
+    }
+  }
+};
 
 function normalizeOutput(text) {
   return text.replace(/\n/g, "\r\n");
@@ -15,7 +23,7 @@ function normalizeOutput(text) {
 
 export default function MemphisRepl() {
   const containerRef = useRef(null);
-  const handlerRef = useRef(null); 
+  const handlerRef = useRef(null);
 
   useEffect(() => {
     let term = null;
