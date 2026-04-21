@@ -133,8 +133,10 @@ export default function MemphisRepl() {
           lastStep = step;
 
           if (step.type === "complete") {
-            const result = step.data;
+            const output = step.data;
 
+            const { result, stdout } = output;
+            if (stdout) write(normalizeOutput(stdout));
             if (result.type === "ok" || result.type === "err") {
               write(normalizeOutput(result.value));
               enter();
