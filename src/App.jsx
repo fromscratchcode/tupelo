@@ -15,6 +15,7 @@ function normalizeOutput(text) {
 
 export default function MemphisRepl() {
   const containerRef = useRef(null);
+  const handlerRef = useRef(null); 
 
   useEffect(() => {
     let term = null;
@@ -74,6 +75,115 @@ export default function MemphisRepl() {
       pendingOutput = "";
     }
 
+    const handleData = (data) => {
+      // CTRL-C
+      if (data === "\x03") {
+        enter();
+        repl.reset();
+        lastStep = INITIAL_STEP;
+        resetInput();
+      }
+
+      // LEFT ARROW
+      else if (data === "\x1b[D") {
+        if (cursorIndex > 0) {
+          cursorIndex -= 1;
+        }
+      }
+
+      // RIGHT ARROW
+      else if (data === "\x1b[C") {
+        if (cursorIndex < currentLine.length) {
+          cursorIndex += 1;
+        }
+      }
+
+      // ENTER
+      else if (data === "\r") {
+        // Save history (only if non-empty)
+        if (currentLine.trim() !== "") {
+          history.push(currentLine);
+        }
+        historyIndex = null;
+
+        enter();
+        const step = repl.input_line(currentLine + "\n");
+        lastStep = step;
+
+        if (step.type === "complete") {
+          const output = step.data;
+
+          const { result, stdout } = output;
+          if (stdout) write(normalizeOutput(stdout));
+          if (result.type === "ok" || result.type === "err") {
+            write(normalizeOutput(result.value));
+            enter();
+          }
+        }
+
+        resetInput();
+      }
+
+      // BACKSPACE
+      else if (data === "\u007F") {
+        if (cursorIndex > 0) {
+          currentLine =
+            currentLine.slice(0, cursorIndex - 1) +
+            currentLine.slice(cursorIndex);
+
+          cursorIndex -= 1;
+        }
+      }
+
+      // UP ARROW
+      else if (data === "\x1b[A") {
+        if (historyIndex !== null) {
+          if (historyIndex > 0) {
+            historyIndex -= 1;
+          }
+        } else if (history.length > 0) {
+          historyIndex = history.length - 1;
+        }
+
+        if (historyIndex !== null) {
+          currentLine = history[historyIndex];
+          cursorIndex = currentLine.length;
+        }
+      }
+
+      // DOWN ARROW
+      else if (data === "\x1b[B") {
+        if (historyIndex !== null) {
+          if (historyIndex < history.length - 1) {
+            historyIndex += 1;
+          } else {
+            historyIndex = null;
+            currentLine = "";
+          }
+
+          if (historyIndex !== null) {
+            currentLine = history[historyIndex];
+          } else {
+            currentLine = "";
+          }
+
+          cursorIndex = currentLine.length;
+        }
+      }
+
+      // NORMAL TEXT
+      else {
+        currentLine =
+          currentLine.slice(0, cursorIndex) +
+          data +
+          currentLine.slice(cursorIndex);
+
+        cursorIndex += data.length;
+      }
+
+      redrawLine();
+    };
+
     async function setup() {
       repl = await Memphis.createRepl();
 
@@ -97,116 +207,11 @@ export default function MemphisRepl() {
       enter();
       redrawLine();
 
-      term.onData((data) => {
-        // CTRL-C
-        if (data === "\x03") {
-          enter();
-          repl.reset();
-          lastStep = INITIAL_STEP;
-          resetInput();
-        }
-
-        // LEFT ARROW
-        else if (data === "\x1b[D") {
-          if (cursorIndex > 0) {
-            cursorIndex -= 1;
-          }
-        }
-
-        // RIGHT ARROW
-        else if (data === "\x1b[C") {
-          if (cursorIndex < currentLine.length) {
-            cursorIndex += 1;
-          }
-        }
-
-        // ENTER
-        else if (data === "\r") {
-          // Save history (only if non-empty)
-          if (currentLine.trim() !== "") {
-            history.push(currentLine);
-          }
-          historyIndex = null;
-
-          enter();
-          const step = repl.input_line(currentLine + "\n");
-          lastStep = step;
-
-          if (step.type === "complete") {
-            const output = step.data;
-
-            const { result, stdout } = output;
-            if (stdout) write(normalizeOutput(stdout));
-            if (result.type === "ok" || result.type === "err") {
-              write(normalizeOutput(result.value));
-              enter();
-            }
-          }
-
-          resetInput();
-        }
-
-        // BACKSPACE
-        else if (data === "\u007F") {
-          if (cursorIndex > 0) {
-            currentLine =
-              currentLine.slice(0, cursorIndex - 1) +
-              currentLine.slice(cursorIndex);
-
-            cursorIndex -= 1;
-          }
-        }
-
-        // UP ARROW
-        else if (data === "\x1b[A") {
-          if (historyIndex !== null) {
-            if (historyIndex > 0) {
-              historyIndex -= 1;
-            }
-          } else if (history.length > 0) {
-            historyIndex = history.length - 1;
-          }
-
-          if (historyIndex !== null) {
-            currentLine = history[historyIndex];
-            cursorIndex = currentLine.length;
-          }
-        }
-
-        // DOWN ARROW
-        else if (data === "\x1b[B") {
-          if (historyIndex !== null) {
-            if (historyIndex < history.length - 1) {
-              historyIndex += 1;
-            } else {
-              historyIndex = null;
-              currentLine = "";
-            }
-
-            if (historyIndex !== null) {
-              currentLine = history[historyIndex];
-            } else {
-              currentLine = "";
-            }
-
-            cursorIndex = currentLine.length;
-          }
-        }
-
-        // NORMAL TEXT
-        else {
-          currentLine =
-            currentLine.slice(0, cursorIndex) +
-            data +
-            currentLine.slice(cursorIndex);
-
-          cursorIndex += data.length;
-        }
-
-        redrawLine();
-      });
+      term.onData(handleData);
     }
 
+    // Give access to our handler to the React components so we can press arrow keys
+    handlerRef.current = handleData;
     setup();
 
     return () => {
@@ -215,10 +220,40 @@ export default function MemphisRepl() {
     };
   }, []);
 
+  // This only works on load right now, not resize.
+  const isMobile = window.innerWidth < 768;
+
   return (
-    <div
-      ref={containerRef}
-      style={{ width: "100%", height: "100%", background: "black" }}
-    />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      <div
+        ref={containerRef}
+        style={{ width: "100%", height: "100%", background: "black" }}
+      />
+
+      {isMobile && <div
+        style={{
+          position: "absolute",
+          top: 8,
+          right: 8,
+          display: "flex",
+          flexDirection: "column",
+          gap: 6,
+          zIndex: 10,
+        }}
+      >
+        <button
+          onClick={() => handlerRef.current?.("\x1b[A")}
+          style={{ fontSize: 16 }}
+        >
+          ↑
+        </button>
+        <button
+          onClick={() => handlerRef.current?.("\x1b[B")}
+          style={{ fontSize: 16 }}
+        >
+          ↓
+        </button>
+      </div>}
+    </div>
   );
 }
