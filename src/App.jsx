@@ -62,6 +62,11 @@ export default function MemphisRepl() {
       pendingOutput += data;
     }
 
+    function writeln(data) {
+      write(data);
+      enter();
+    }
+
     function resetInput() {
       const { indent } = promptInfo();
       currentLine = indent;
@@ -211,8 +216,20 @@ export default function MemphisRepl() {
 
       window.addEventListener("resize", handleResize);
 
-      write("Memphis REPL");
-      enter();
+      writeln("==========================================================================");
+      writeln("");
+      writeln("  Memphis REPL");
+      writeln("");
+      writeln("  version=0.1.0 engine=treewalk");
+      writeln("");
+      writeln("  Memphis supports many core Python language features, but");
+      writeln("  only a limited subset of the Python standard library.");
+      writeln("");
+      writeln("  Supported features:");
+      writeln("  https://github.com/fromscratchcode/memphis/blob/main/docs/SUPPORTED.md");
+      writeln("");
+      writeln("==========================================================================");
+      writeln("");
       redrawLine();
 
       term.onData(handleData);
