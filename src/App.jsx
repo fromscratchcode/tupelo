@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from '@xterm/addon-fit';
 import "xterm/css/xterm.css";
@@ -24,6 +24,9 @@ function normalizeOutput(text) {
 export default function MemphisRepl() {
   const containerRef = useRef(null);
   const handlerRef = useRef(null);
+  const termRef = useRef(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
+  const [showMobileControls, setShowMobileControls] = useState(false);
 
   useEffect(() => {
     let term = null;
@@ -211,6 +214,7 @@ export default function MemphisRepl() {
       if (!container) return;
       container.innerHTML = "";
       term.open(container);
+      termRef.current = term;
 
       fitAddon.fit();
 
@@ -240,13 +244,37 @@ export default function MemphisRepl() {
     setup();
 
     return () => {
+      termRef.current = null;
       term?.dispose();
       window.removeEventListener("resize", handleResize);
     };
   }, []);
 
-  // This only works on load right now, not resize.
-  const isMobile = window.innerWidth < 768;
+  useEffect(() => {
+    const updateIsMobile = () => {
+      const nextIsMobile = window.innerWidth < 768;
+      setIsMobile(nextIsMobile);
+
+      if (!nextIsMobile) {
+        setShowMobileControls(false);
+      }
+    };
+
+    updateIsMobile();
+    window.addEventListener("resize", updateIsMobile);
+
+    return () => {
+      window.removeEventListener("resize", updateIsMobile);
+    };
+  }, []);
+
+  function sendKey(key) {
+    handlerRef.current?.(key);
+  }
+
+  function focusTerminal() {
+    termRef.current?.focus();
+  }
 
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
@@ -255,30 +283,98 @@ export default function MemphisRepl() {
         style={{ width: "100%", height: "100%", background: "black" }}
       />
 
-      {isMobile && <div
-        style={{
-          position: "absolute",
-          top: 8,
-          right: 8,
-          display: "flex",
-          flexDirection: "column",
-          gap: 6,
-          zIndex: 10,
-        }}
-      >
-        <button
-          onClick={() => handlerRef.current?.("\x1b[A")}
-          style={{ fontSize: 16 }}
-        >
-          ↑
-        </button>
-        <button
-          onClick={() => handlerRef.current?.("\x1b[B")}
-          style={{ fontSize: 16 }}
-        >
-          ↓
-        </button>
-      </div>}
+      {isMobile && (
+        <>
+          {showMobileControls && (
+            <button
+              aria-label="Close mobile controls"
+              onClick={() => {
+                setShowMobileControls(false);
+                focusTerminal();
+              }}
+              style={{
+                position: "fixed",
+                inset: 0,
+                border: "none",
+                background: "transparent",
+                padding: 0,
+                zIndex: 19,
+              }}
+            />
+          )}
+
+          <div
+            onClick={(event) => {
+              event.stopPropagation();
+            }}
+            style={{
+              position: "fixed",
+              right: 12,
+              bottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "flex-end",
+              gap: 8,
+              zIndex: 20,
+            }}
+          >
+            {showMobileControls && (
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(3, 48px)",
+                  gridTemplateRows: "repeat(2, 48px)",
+                  gap: 6,
+                }}
+              >
+                <div />
+                <button
+                  aria-label="Up arrow"
+                  onClick={() => sendKey("\x1b[A")}
+                  style={{ fontSize: 20 }}
+                >
+                  ↑
+                </button>
+                <div />
+                <button
+                  aria-label="Left arrow"
+                  onClick={() => sendKey("\x1b[D")}
+                  style={{ fontSize: 20 }}
+                >
+                  ←
+                </button>
+                <button
+                  aria-label="Down arrow"
+                  onClick={() => sendKey("\x1b[B")}
+                  style={{ fontSize: 20 }}
+                >
+                  ↓
+                </button>
+                <button
+                  aria-label="Right arrow"
+                  onClick={() => sendKey("\x1b[C")}
+                  style={{ fontSize: 20 }}
+                >
+                  →
+                </button>
+              </div>
+            )}
+
+            <button
+              aria-expanded={showMobileControls}
+              aria-label="Toggle mobile controls"
+              onClick={() => setShowMobileControls((current) => !current)}
+              style={{
+                fontSize: 16,
+                fontWeight: 600,
+                padding: "10px 14px",
+              }}
+            >
+              ctrl
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 }
