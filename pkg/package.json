@@ -11,7 +11,8 @@
   "files": [
     "memphis_bg.wasm",
     "memphis.js",
-    "memphis.d.ts"
+    "memphis.d.ts",
+    "LICENSE.LESSER"
   ],
   "main": "memphis.js",
   "types": "memphis.d.ts",
