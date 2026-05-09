@@ -70,6 +70,27 @@ export default function MemphisRepl() {
       enter();
     }
 
+    function writeBanner() {
+      const cols = term?.cols ?? 40;
+      const rule = "=".repeat(Math.max(24, Math.min(cols, 74)));
+
+      writeln(rule);
+      writeln("");
+      writeln("Memphis REPL");
+      writeln("");
+      writeln("version=0.1.0 engine=treewalk");
+      writeln("");
+      writeln("Many core Python features supported.");
+      writeln("Standard library support is limited.");
+      writeln("");
+      writeln("Supported features:");
+      writeln("github.com/fromscratchcode/memphis");
+
+      writeln("");
+      writeln(rule);
+      writeln("");
+    }
+
     function resetInput() {
       const { indent } = promptInfo();
       currentLine = indent;
@@ -220,20 +241,7 @@ export default function MemphisRepl() {
 
       window.addEventListener("resize", handleResize);
 
-      writeln("==========================================================================");
-      writeln("");
-      writeln("  Memphis REPL");
-      writeln("");
-      writeln("  version=0.1.0 engine=treewalk");
-      writeln("");
-      writeln("  Memphis supports many core Python language features, but");
-      writeln("  only a limited subset of the Python standard library.");
-      writeln("");
-      writeln("  Supported features:");
-      writeln("  https://github.com/fromscratchcode/memphis/blob/main/docs/SUPPORTED.md");
-      writeln("");
-      writeln("==========================================================================");
-      writeln("");
+      writeBanner();
       redrawLine();
 
       term.onData(handleData);
