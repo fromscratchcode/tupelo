@@ -76,7 +76,7 @@ export default function MemphisRepl() {
 
       writeln(rule);
       writeln("");
-      writeln("Memphis REPL");
+      writeln("Memphis REPL [experimental]");
       writeln("");
       writeln("version=0.1.0 engine=treewalk");
       writeln("");
