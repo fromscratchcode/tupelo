@@ -243,6 +243,9 @@ export default function MemphisRepl() {
 
       writeBanner();
       redrawLine();
+      // Focus directly during setup because we have the live terminal instance
+      // before external callers rely on the ref-backed focus helper.
+      term.focus();
 
       term.onData(handleData);
     }
