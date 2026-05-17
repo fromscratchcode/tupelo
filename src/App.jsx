@@ -1,9 +1,11 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { Terminal } from "xterm";
 import { FitAddon } from '@xterm/addon-fit';
 import "xterm/css/xterm.css";
 
 import { Memphis } from "./memphis";
+import { useIsMobile } from "./hooks/useIsMobile";
+import MobileControls from "./MobileControls";
 import "./App.css";
 
 const INDENT_WIDTH = 4;
@@ -25,8 +27,7 @@ export default function MemphisRepl() {
   const containerRef = useRef(null);
   const handlerRef = useRef(null);
   const termRef = useRef(null);
-  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 768);
-  const [showMobileControls, setShowMobileControls] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     let term = null;
@@ -283,24 +284,6 @@ export default function MemphisRepl() {
     };
   }, []);
 
-  useEffect(() => {
-    const updateIsMobile = () => {
-      const nextIsMobile = window.innerWidth < 768;
-      setIsMobile(nextIsMobile);
-
-      if (!nextIsMobile) {
-        setShowMobileControls(false);
-      }
-    };
-
-    updateIsMobile();
-    window.addEventListener("resize", updateIsMobile);
-
-    return () => {
-      window.removeEventListener("resize", updateIsMobile);
-    };
-  }, []);
-
   function sendKey(key) {
     handlerRef.current?.(key);
   }
@@ -316,98 +299,12 @@ export default function MemphisRepl() {
         style={{ width: "100%", height: "100%", background: "black" }}
       />
 
-      {isMobile && (
-        <>
-          {showMobileControls && (
-            <button
-              aria-label="Close mobile controls"
-              onClick={() => {
-                setShowMobileControls(false);
-                focusTerminal();
-              }}
-              style={{
-                position: "fixed",
-                inset: 0,
-                border: "none",
-                background: "transparent",
-                padding: 0,
-                zIndex: 19,
-              }}
-            />
-          )}
-
-          <div
-            onClick={(event) => {
-              event.stopPropagation();
-            }}
-            style={{
-              position: "fixed",
-              right: 12,
-              bottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "flex-end",
-              gap: 8,
-              zIndex: 20,
-            }}
-          >
-            {showMobileControls && (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(3, 48px)",
-                  gridTemplateRows: "repeat(2, 48px)",
-                  gap: 6,
-                }}
-              >
-                <div />
-                <button
-                  aria-label="Up arrow"
-                  onClick={() => sendKey("\x1b[A")}
-                  style={{ fontSize: 20 }}
-                >
-                  ↑
-                </button>
-                <div />
-                <button
-                  aria-label="Left arrow"
-                  onClick={() => sendKey("\x1b[D")}
-                  style={{ fontSize: 20 }}
-                >
-                  ←
-                </button>
-                <button
-                  aria-label="Down arrow"
-                  onClick={() => sendKey("\x1b[B")}
-                  style={{ fontSize: 20 }}
-                >
-                  ↓
-                </button>
-                <button
-                  aria-label="Right arrow"
-                  onClick={() => sendKey("\x1b[C")}
-                  style={{ fontSize: 20 }}
-                >
-                  →
-                </button>
-              </div>
-            )}
-
-            <button
-              aria-expanded={showMobileControls}
-              aria-label="Toggle mobile controls"
-              onClick={() => setShowMobileControls((current) => !current)}
-              style={{
-                fontSize: 16,
-                fontWeight: 600,
-                padding: "10px 14px",
-              }}
-            >
-              ctrl
-            </button>
-          </div>
-        </>
-      )}
+      {isMobile &&
+        <MobileControls
+          onKey={sendKey}
+          onFocus={focusTerminal}
+        />
+      }
     </div>
   );
 }
