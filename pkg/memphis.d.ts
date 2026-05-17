@@ -11,21 +11,15 @@ export class WasmRepl {
 
 export function compile(text: string): any;
 
-export function evaluate(code: string): string;
-
-export function greet(): string;
-
 export function lex(text: string): any;
 
 export type InitInput = RequestInfo | URL | Response | BufferSource | WebAssembly.Module;
 
 export interface InitOutput {
   readonly memory: WebAssembly.Memory;
-  readonly compile: (a: number, b: number) => [number, number, number];
-  readonly evaluate: (a: number, b: number) => [number, number];
-  readonly greet: () => [number, number];
-  readonly lex: (a: number, b: number) => any;
   readonly __wbg_wasmrepl_free: (a: number, b: number) => void;
+  readonly compile: (a: number, b: number) => [number, number, number];
+  readonly lex: (a: number, b: number) => any;
   readonly wasmrepl_input_line: (a: number, b: number, c: number) => any;
   readonly wasmrepl_new: () => number;
   readonly wasmrepl_reset: (a: number) => void;
