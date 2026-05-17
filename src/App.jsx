@@ -31,6 +31,8 @@ export default function MemphisRepl() {
   useEffect(() => {
     let term = null;
     let repl = null;
+    // Prevent async setup work from attaching resources after unmount.
+    let isDisposed = false;
     const fitAddon = new FitAddon();
     const handleResize = () => {
       fitAddon.fit();
@@ -68,6 +70,15 @@ export default function MemphisRepl() {
     function writeln(data) {
       write(data);
       enter();
+    }
+
+    function disposeResources() {
+      termRef.current = null;
+      term?.dispose();
+      term = null;
+      // `dispose()` only handles xterm; the interpreter needs its own teardown.
+      repl?.free();
+      repl = null;
     }
 
     function writeBanner() {
@@ -222,7 +233,14 @@ export default function MemphisRepl() {
     };
 
     async function setup() {
-      repl = await Memphis.createRepl();
+      const nextRepl = await Memphis.createRepl();
+      if (isDisposed) {
+        // `WasmRepl` owns wasm-side memory and must be released explicitly.
+        nextRepl.free();
+        return;
+      }
+
+      repl = nextRepl;
 
       term = new Terminal({
         cursorBlink: true,
@@ -232,7 +250,11 @@ export default function MemphisRepl() {
       term.loadAddon(fitAddon);
 
       const container = containerRef.current;
-      if (!container) return;
+      if (!container || isDisposed) {
+        // Clean up both JS and wasm resources if the mount target disappeared.
+        disposeResources();
+        return;
+      }
       container.innerHTML = "";
       term.open(container);
       termRef.current = term;
@@ -255,8 +277,8 @@ export default function MemphisRepl() {
     setup();
 
     return () => {
-      termRef.current = null;
-      term?.dispose();
+      isDisposed = true;
+      disposeResources();
       window.removeEventListener("resize", handleResize);
     };
   }, []);
