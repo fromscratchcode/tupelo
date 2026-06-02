@@ -1,6 +1,11 @@
 import { useState } from "react";
 
-const MobileControls = ({ onKey, onFocus }) => {
+type MobileControlsProps = {
+  onFocus(): void;
+  onKey(key: string): void;
+};
+
+const MobileControls = ({ onKey, onFocus }: MobileControlsProps) => {
   const [showMobileControls, setShowMobileControls] = useState(false);
 
   return (
@@ -24,7 +29,7 @@ const MobileControls = ({ onKey, onFocus }) => {
       )}
 
       <div
-        onClick={(event) => {
+        onClick={(event: React.MouseEvent<HTMLDivElement>) => {
           event.stopPropagation();
         }}
         style={{
@@ -94,7 +99,7 @@ const MobileControls = ({ onKey, onFocus }) => {
         </button>
       </div>
     </>
-  )
-}
+  );
+};
 
 export default MobileControls;

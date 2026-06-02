@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
-export const useIsMobile = () => {
-  const [isMobile, setIsMobile] = useState(() =>
+export const useIsMobile = (): boolean => {
+  const [isMobile, setIsMobile] = useState<boolean>(() =>
     // Keep the first client render accurate without crashing in SSR.
-    typeof window !== "undefined" ? window.innerWidth < 768 : false
+    typeof window !== "undefined" ? window.innerWidth < 768 : false,
   );
 
   useEffect(() => {
-    const updateIsMobile = () => {
+    const updateIsMobile = (): void => {
       const nextIsMobile = window.innerWidth < 768;
       setIsMobile(nextIsMobile);
     };
@@ -20,5 +20,5 @@ export const useIsMobile = () => {
     };
   }, []);
 
-  return isMobile
-}
+  return isMobile;
+};
