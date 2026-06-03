@@ -84,7 +84,7 @@ export default function MemphisRepl() {
   const bannerLines = [
     "Memphis REPL [experimental]",
     "",
-    `version=0.1.0 engine=${repl.engine()}`,
+    `version=${repl.version()} engine=${repl.engine()}`,
     "",
     "Many core Python features supported.",
     "Standard library support is limited.",

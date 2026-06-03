@@ -287,6 +287,21 @@ export class WasmRepl {
     const ret = wasm.wasmrepl_submit(this.__wbg_ptr);
     return ret;
   }
+  /**
+   * @returns {string}
+   */
+  version() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+      const ret = wasm.wasmrepl_version(this.__wbg_ptr);
+      deferred1_0 = ret[0];
+      deferred1_1 = ret[1];
+      return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+      wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
+  }
   backspace() {
     wasm.wasmrepl_backspace(this.__wbg_ptr);
   }

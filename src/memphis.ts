@@ -16,6 +16,7 @@ export type ReplStep =
   | { type: "incomplete"; data: unknown };
 
 export interface MemphisRepl {
+  version(): string;
   engine(): MemphisEngine;
   backspace(): void;
   currentLine(): string;
@@ -62,6 +63,9 @@ export const createMemphis = async (): Promise<Memphis> => {
       const repl = new WasmRepl(engineStr);
 
       return {
+        version() {
+          return repl.version();
+        },
         engine() {
           return repl.engine() as MemphisEngine;
         },

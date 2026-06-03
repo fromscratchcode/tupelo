@@ -14,6 +14,7 @@ export class WasmRepl {
   engine(): string;
   prompt(): string;
   submit(): any;
+  version(): string;
   backspace(): void;
   interrupt(): void;
   move_left(): void;
@@ -48,6 +49,7 @@ export interface InitOutput {
   readonly wasmrepl_new: (a: number, b: number) => number;
   readonly wasmrepl_prompt: (a: number) => [number, number];
   readonly wasmrepl_submit: (a: number) => any;
+  readonly wasmrepl_version: (a: number) => [number, number];
   readonly compile: (a: number, b: number) => [number, number, number];
   readonly lex: (a: number, b: number) => any;
   readonly parse: (a: number, b: number) => [number, number, number];

@@ -15,6 +15,7 @@ export const wasmrepl_move_right: (a: number) => void;
 export const wasmrepl_new: (a: number, b: number) => number;
 export const wasmrepl_prompt: (a: number) => [number, number];
 export const wasmrepl_submit: (a: number) => any;
+export const wasmrepl_version: (a: number) => [number, number];
 export const compile: (a: number, b: number) => [number, number, number];
 export const lex: (a: number, b: number) => any;
 export const parse: (a: number, b: number) => [number, number, number];
