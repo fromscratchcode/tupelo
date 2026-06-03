@@ -4,21 +4,21 @@ import "./App.css";
 import MemphisTerminal, { type MemphisTerminalHandle } from "./MemphisTerminal";
 import MobileControls from "./MobileControls";
 import { useIsMobile } from "./hooks/useIsMobile";
-import { createMemphis, type MemphisRepl } from "./memphis";
+import { createMemphis, type MemphisEngine, type MemphisRepl } from "./memphis";
 
-const BANNER_LINES = [
-  "Memphis REPL [experimental]",
-  "",
-  "version=0.1.0 engine=treewalk",
-  "",
-  "Many core Python features supported.",
-  "Standard library support is limited.",
-  "",
-  "Supported features:",
-  "github.com/fromscratchcode/memphis",
-];
+function getSelectedEngine(): MemphisEngine | undefined {
+  const engine = new URLSearchParams(window.location.search).get("engine");
+  if (engine === "treewalk" || engine === "bytecode_vm") {
+    return engine;
+  }
+
+  return undefined;
+}
 
 export default function MemphisRepl() {
+  const [selectedEngine] = useState<MemphisEngine | undefined>(
+    getSelectedEngine,
+  );
   const [repl, setRepl] = useState<MemphisRepl | null>(null);
   // Keep a stable reference to the REPL so we can free its wasm resources on unmount.
   const replRef = useRef<MemphisRepl | null>(null);
@@ -34,7 +34,7 @@ export default function MemphisRepl() {
         return;
       }
 
-      const nextRepl = nextMemphis.createRepl();
+      const nextRepl = nextMemphis.createRepl({ engine: selectedEngine });
       if (isDisposed) {
         nextRepl.free();
         return;
@@ -81,11 +81,23 @@ export default function MemphisRepl() {
     );
   }
 
+  const bannerLines = [
+    "Memphis REPL [experimental]",
+    "",
+    `version=0.1.0 engine=${repl.engine()}`,
+    "",
+    "Many core Python features supported.",
+    "Standard library support is limited.",
+    "",
+    "Supported features:",
+    "github.com/fromscratchcode/memphis",
+  ];
+
   return (
     <div style={{ position: "relative", width: "100%", height: "100%" }}>
       <MemphisTerminal
         ref={terminalRef}
-        bannerLines={BANNER_LINES}
+        bannerLines={bannerLines}
         repl={repl}
       />
 

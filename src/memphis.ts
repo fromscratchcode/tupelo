@@ -1,6 +1,10 @@
 import init, { WasmRepl, compile, lex, parse } from "../pkg/memphis";
 
-export type ReplResult = { type: "none" } | { type: "ok" | "err"; value: string };
+export type MemphisEngine = "treewalk" | "bytecode_vm";
+
+export type ReplResult =
+  | { type: "none" }
+  | { type: "ok" | "err"; value: string };
 
 export type ReplOutput = {
   stdout: string;
@@ -12,6 +16,7 @@ export type ReplStep =
   | { type: "incomplete"; data: unknown };
 
 export interface MemphisRepl {
+  engine(): MemphisEngine;
   backspace(): void;
   currentLine(): string;
   cursorIndex(): number;
@@ -26,8 +31,12 @@ export interface MemphisRepl {
   submit(): ReplStep;
 }
 
+interface CreateReplOptions {
+  engine?: MemphisEngine;
+}
+
 export interface Memphis {
-  createRepl(): MemphisRepl;
+  createRepl(options?: CreateReplOptions): MemphisRepl;
   compile(code: string): unknown;
   lex(code: string): unknown;
   parse(code: string): unknown;
@@ -48,10 +57,14 @@ export const createMemphis = async (): Promise<Memphis> => {
   }
 
   return {
-    createRepl() {
-      const repl = new WasmRepl();
+    createRepl({ engine }: CreateReplOptions = {}) {
+      const engineStr = engine ?? "treewalk";
+      const repl = new WasmRepl(engineStr);
 
       return {
+        engine() {
+          return repl.engine() as MemphisEngine;
+        },
         backspace() {
           repl.backspace();
         },

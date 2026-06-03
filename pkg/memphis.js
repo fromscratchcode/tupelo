@@ -235,11 +235,35 @@ export class WasmRepl {
   history_down() {
     wasm.wasmrepl_history_down(this.__wbg_ptr);
   }
-  constructor() {
-    const ret = wasm.wasmrepl_new();
+  /**
+   * @param {string} engine_str
+   */
+  constructor(engine_str) {
+    const ptr0 = passStringToWasm0(
+      engine_str,
+      wasm.__wbindgen_malloc,
+      wasm.__wbindgen_realloc,
+    );
+    const len0 = WASM_VECTOR_LEN;
+    const ret = wasm.wasmrepl_new(ptr0, len0);
     this.__wbg_ptr = ret >>> 0;
     WasmReplFinalization.register(this, this.__wbg_ptr, this);
     return this;
+  }
+  /**
+   * @returns {string}
+   */
+  engine() {
+    let deferred1_0;
+    let deferred1_1;
+    try {
+      const ret = wasm.wasmrepl_engine(this.__wbg_ptr);
+      deferred1_0 = ret[0];
+      deferred1_1 = ret[1];
+      return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+      wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+    }
   }
   /**
    * @returns {string}

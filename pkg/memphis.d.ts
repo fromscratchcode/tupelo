@@ -10,7 +10,8 @@ export class WasmRepl {
   current_line(): string;
   cursor_index(): number;
   history_down(): void;
-  constructor();
+  constructor(engine_str: string);
+  engine(): string;
   prompt(): string;
   submit(): any;
   backspace(): void;
@@ -37,13 +38,14 @@ export interface InitOutput {
   readonly wasmrepl_backspace: (a: number) => void;
   readonly wasmrepl_current_line: (a: number) => [number, number];
   readonly wasmrepl_cursor_index: (a: number) => number;
+  readonly wasmrepl_engine: (a: number) => [number, number];
   readonly wasmrepl_history_down: (a: number) => void;
   readonly wasmrepl_history_up: (a: number) => void;
   readonly wasmrepl_insert_text: (a: number, b: number, c: number) => void;
   readonly wasmrepl_interrupt: (a: number) => void;
   readonly wasmrepl_move_left: (a: number) => void;
   readonly wasmrepl_move_right: (a: number) => void;
-  readonly wasmrepl_new: () => number;
+  readonly wasmrepl_new: (a: number, b: number) => number;
   readonly wasmrepl_prompt: (a: number) => [number, number];
   readonly wasmrepl_submit: (a: number) => any;
   readonly compile: (a: number, b: number) => [number, number, number];
