@@ -18,7 +18,7 @@ const MobileControls = ({ onKey, onFocus }: MobileControlsProps) => {
             onFocus();
           }}
           style={{
-            position: "fixed",
+            position: "absolute",
             inset: 0,
             border: "none",
             background: "transparent",
@@ -33,7 +33,7 @@ const MobileControls = ({ onKey, onFocus }: MobileControlsProps) => {
           event.stopPropagation();
         }}
         style={{
-          position: "fixed",
+          position: "absolute",
           right: 12,
           bottom: "calc(12px + env(safe-area-inset-bottom, 0px))",
           display: "flex",

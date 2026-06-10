@@ -134,6 +134,10 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
       termRef.current = term;
 
       fitAddon.fit();
+      const resizeObserver = new ResizeObserver(() => {
+        fitAddon.fit();
+      });
+      resizeObserver.observe(container);
       window.addEventListener("resize", handleResize);
 
       writeBanner();
@@ -146,6 +150,7 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
       return () => {
         handlerRef.current = null;
         termRef.current = null;
+        resizeObserver.disconnect();
         window.removeEventListener("resize", handleResize);
         term.dispose();
       };

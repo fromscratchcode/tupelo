@@ -1,4 +1,10 @@
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type CSSProperties,
+} from "react";
 
 import "./App.css";
 import MemphisTerminal, { type MemphisTerminalHandle } from "./MemphisTerminal";
@@ -71,6 +77,18 @@ export default function Tupelo({
     terminalRef.current?.focus();
   }
 
+  const resolvedBannerLines = useMemo(
+    () =>
+      repl
+        ? [
+            ...bannerLines.slice(0, 2),
+            `version=${repl.version()} engine=${repl.engine()}`,
+            ...bannerLines.slice(2),
+          ]
+        : bannerLines,
+    [bannerLines, repl],
+  );
+
   if (!repl) {
     return (
       <div
@@ -92,12 +110,6 @@ export default function Tupelo({
       </div>
     );
   }
-
-  const resolvedBannerLines = [
-    ...bannerLines.slice(0, 2),
-    `version=${repl.version()} engine=${repl.engine()}`,
-    ...bannerLines.slice(2),
-  ];
 
   return (
     <div
