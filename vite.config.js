@@ -4,6 +4,7 @@ import babel from "@rolldown/plugin-babel";
 
 export default defineConfig(({ mode }) => ({
   plugins: [react(), babel({ presets: [] })],
+  publicDir: mode === "lib" ? false : undefined,
   build:
     mode === "lib"
       ? {

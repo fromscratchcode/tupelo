@@ -1,10 +1,16 @@
 {
   "extends": "./tsconfig.json",
+  // Build declarations from the public entrypoint plus the global CSS module shim it depends on.
+  "files": [
+    "./src/globals.d.ts",
+    "./src/index.ts"
+  ],
   "compilerOptions": {
     "declaration": true,
     "declarationDir": "dist",
     "emitDeclarationOnly": true,
     "noEmit": false,
     "rootDir": "src"
-  }
+  },
+  "include": []
 }
