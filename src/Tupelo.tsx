@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type CSSProperties } from "react";
 
 import "./App.css";
 import MemphisTerminal, { type MemphisTerminalHandle } from "./MemphisTerminal";
@@ -6,19 +6,29 @@ import MobileControls from "./MobileControls";
 import { useIsMobile } from "./hooks/useIsMobile";
 import { createMemphis, type MemphisEngine, type MemphisRepl } from "./memphis";
 
-function getSelectedEngine(): MemphisEngine | undefined {
-  const engine = new URLSearchParams(window.location.search).get("engine");
-  if (engine === "treewalk" || engine === "bytecode_vm") {
-    return engine;
-  }
+const defaultBannerLines = [
+  "Memphis REPL [experimental]",
+  "",
+  "Many core Python features supported.",
+  "Standard library support is limited.",
+  "",
+  "Supported features:",
+  "github.com/fromscratchcode/memphis",
+];
 
-  return undefined;
+export interface TupeloProps {
+  bannerLines?: string[];
+  className?: string;
+  engine?: MemphisEngine;
+  style?: CSSProperties;
 }
 
-export default function MemphisRepl() {
-  const [selectedEngine] = useState<MemphisEngine | undefined>(
-    getSelectedEngine,
-  );
+export default function Tupelo({
+  bannerLines = defaultBannerLines,
+  className,
+  engine,
+  style,
+}: TupeloProps) {
   const [repl, setRepl] = useState<MemphisRepl | null>(null);
   // Keep a stable reference to the REPL so we can free its wasm resources on unmount.
   const replRef = useRef<MemphisRepl | null>(null);
@@ -34,7 +44,7 @@ export default function MemphisRepl() {
         return;
       }
 
-      const nextRepl = nextMemphis.createRepl({ engine: selectedEngine });
+      const nextRepl = nextMemphis.createRepl({ engine });
       if (isDisposed) {
         nextRepl.free();
         return;
@@ -51,7 +61,7 @@ export default function MemphisRepl() {
       replRef.current?.free();
       replRef.current = null;
     };
-  }, []);
+  }, [engine]);
 
   function sendKey(key: string): void {
     terminalRef.current?.sendKey(key);
@@ -64,6 +74,7 @@ export default function MemphisRepl() {
   if (!repl) {
     return (
       <div
+        className={className}
         style={{
           width: "100%",
           height: "100%",
@@ -74,6 +85,7 @@ export default function MemphisRepl() {
           color: "#f5f5f5",
           fontFamily: "ui-monospace, Consolas, monospace",
           fontSize: 14,
+          ...style,
         }}
       >
         Loading Memphis...
@@ -81,23 +93,20 @@ export default function MemphisRepl() {
     );
   }
 
-  const bannerLines = [
-    "Memphis REPL [experimental]",
-    "",
+  const resolvedBannerLines = [
+    ...bannerLines.slice(0, 2),
     `version=${repl.version()} engine=${repl.engine()}`,
-    "",
-    "Many core Python features supported.",
-    "Standard library support is limited.",
-    "",
-    "Supported features:",
-    "github.com/fromscratchcode/memphis",
+    ...bannerLines.slice(2),
   ];
 
   return (
-    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+    <div
+      className={className}
+      style={{ position: "relative", width: "100%", height: "100%", ...style }}
+    >
       <MemphisTerminal
         ref={terminalRef}
-        bannerLines={bannerLines}
+        bannerLines={resolvedBannerLines}
         repl={repl}
       />
 
