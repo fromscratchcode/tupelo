@@ -14,7 +14,12 @@ export default defineConfig(({ mode }) => ({
             fileName: () => "index.js",
           },
           rollupOptions: {
-            external: ["react", "react-dom", "react/jsx-runtime", "react/jsx-dev-runtime"],
+            external: [
+              "react",
+              "react-dom",
+              "react/jsx-runtime",
+              "react/jsx-dev-runtime",
+            ],
           },
         }
       : undefined,

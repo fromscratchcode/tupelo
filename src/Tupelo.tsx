@@ -10,7 +10,11 @@ import "./App.css";
 import MemphisTerminal, { type MemphisTerminalHandle } from "./MemphisTerminal";
 import MobileControls from "./MobileControls";
 import { useIsMobile } from "./hooks/useIsMobile";
-import { createMemphis, type MemphisEngine, type MemphisRepl } from "./memphis";
+import {
+  getMemphis,
+  type MemphisEngine,
+  type MemphisRepl,
+} from "@fromscratchcode/memphis-js";
 
 const defaultBannerLines = [
   "Memphis REPL [experimental]",
@@ -45,7 +49,7 @@ export default function Tupelo({
     let isDisposed = false;
 
     async function setupRepl(): Promise<void> {
-      const nextMemphis = await createMemphis();
+      const nextMemphis = await getMemphis();
       if (isDisposed) {
         return;
       }

@@ -1,7 +1,7 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 import { FitAddon } from "@xterm/addon-fit";
 import { Terminal } from "xterm";
-import type { MemphisRepl } from "./memphis";
+import type { MemphisRepl } from "@fromscratchcode/memphis-js";
 import "xterm/css/xterm.css";
 
 function normalizeOutput(text: string): string {
