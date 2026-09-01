@@ -11,6 +11,7 @@ function normalizeOutput(text: string): string {
 type MemphisTerminalHandle = {
   focus(): void;
   sendKey(key: string): void;
+  write(chunk: string): void;
 };
 
 type MemphisTerminalProps = {
@@ -23,6 +24,7 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
     const containerRef = useRef<HTMLDivElement | null>(null);
     const termRef = useRef<Terminal | null>(null);
     const handlerRef = useRef<((key: string) => void) | null>(null);
+    const outputRef = useRef<((chunk: string) => void) | null>(null);
 
     // Expose a minimal terminal API to the parent without leaking xterm internals.
     useImperativeHandle(
@@ -33,6 +35,9 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
         },
         sendKey(key: string) {
           handlerRef.current?.(key);
+        },
+        write(chunk: string) {
+          outputRef.current?.(chunk);
         },
       }),
       [],
@@ -85,6 +90,10 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
         pendingOutput = "";
       }
 
+      function queueOutput(chunk: string): void {
+        write(normalizeOutput(chunk));
+      }
+
       const handleData = (data: string): void => {
         if (data === "\x03") {
           enter();
@@ -98,11 +107,7 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
           const step = repl.submit();
 
           if (step.type === "complete") {
-            const { result, stdout } = step.data;
-
-            if (stdout) {
-              write(normalizeOutput(stdout));
-            }
+            const result = step.data;
 
             if (result.type === "ok" || result.type === "err") {
               write(normalizeOutput(result.value));
@@ -146,9 +151,11 @@ const MemphisTerminal = forwardRef<MemphisTerminalHandle, MemphisTerminalProps>(
 
       term.onData(handleData);
       handlerRef.current = handleData;
+      outputRef.current = queueOutput;
 
       return () => {
         handlerRef.current = null;
+        outputRef.current = null;
         termRef.current = null;
         resizeObserver.disconnect();
         window.removeEventListener("resize", handleResize);

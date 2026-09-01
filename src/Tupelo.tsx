@@ -54,7 +54,12 @@ export default function Tupelo({
         return;
       }
 
-      const nextRepl = nextMemphis.createRepl({ engine });
+      const nextRepl = nextMemphis.createRepl({
+        engine,
+        onStdout: (chunk) => {
+          terminalRef.current?.write(chunk);
+        },
+      });
       if (isDisposed) {
         nextRepl.free();
         return;
