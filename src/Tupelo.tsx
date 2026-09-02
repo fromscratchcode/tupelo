@@ -59,6 +59,9 @@ export default function Tupelo({
         onStdout: (chunk) => {
           terminalRef.current?.write(chunk);
         },
+        onInput: (prompt) => {
+          return window.prompt(prompt);
+        }
       });
       if (isDisposed) {
         nextRepl.free();
